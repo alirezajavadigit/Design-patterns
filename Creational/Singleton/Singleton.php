@@ -28,6 +28,13 @@ class Singleton
     private static $instance = null;
 
     /**
+     * Lock for thread safety.
+     * 
+     * @var mixed Lock for thread safety.
+     */
+    private static $lock = null;
+
+    /**
      * Constructor method is private to prevent direct instantiation of the class.
      * 
      * This constructor method is made private to prevent external instantiation 
@@ -35,6 +42,24 @@ class Singleton
      * within itself, which is essential for implementing the Singleton pattern.
      */
     private function __construct()
+    {
+        // Initialize lock
+        if (is_null(self::$lock)) {
+            self::$lock = new \stdClass();
+        }
+    }
+
+    /**
+     * Prevent instance from being cloned.
+     */
+    private function __clone()
+    {
+    }
+
+    /**
+     * Prevent instance from being unserialized.
+     */
+    private function __wakeup()
     {
     }
 
@@ -50,7 +75,14 @@ class Singleton
      */
     public static function getInstance(): self
     {
-        // If the instance does not exist, create a new one and assign it to $instance.
-        return self::$instance ? self::$instance : self::$instance = new self();
+        if (is_null(self::$instance)) {
+            // Thread-safe lazy initialization
+            $lock = self::$lock; // to ensure thread safety
+            if (is_null(self::$instance)) {
+                self::$instance = new self();
+            }
+        }
+
+        return self::$instance;
     }
 }
